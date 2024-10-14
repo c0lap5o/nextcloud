@@ -1,6 +1,7 @@
 # Nextcloud with Traefik on Docker
 
-![Nextcloud Logo](https://nextcloud.com/wp-content/uploads/2020/10/nextcloud-logo.svg)
+![Nextcloud Logo](https://cdn.icon-icons.com/icons2/2699/PNG/512/nextcloud_logo_icon_168082.png) 
+![Traefik Logo](https://raw.githubusercontent.com/docker-library/docs/a6cc2c5f4bc6658168f2a0abbb0307acaefff80e/traefik/logo.png)
 
 ## Overview
 
@@ -27,7 +28,7 @@ git clone https://github.com/yourusername/nextcloud-traefik-docker.git
 cd nextcloud-traefik-docker
 ```
 
-### Create a '.env' FIle
+## Create a '.env' FIle
 
 ### Create a .env file in the project root directory with the following content:
 
@@ -52,7 +53,7 @@ ACME_EMAIL=your.email@example.com
 
 ### Local Development
 
-#### To start the services for local development, run:
+To start the services for local development, run:
 
 ```bash
 docker-compose --profile local up -d
@@ -60,9 +61,9 @@ docker-compose --profile local up -d
 You can access Nextcloud at http://nextcloud.localhost.
 
 
-##  Production Environment
+###  Production Environment
 
-###  To start the services for production, run:
+To start the services for production, run:
 
 ```bash
 docker-compose --profile production up -d
@@ -75,7 +76,7 @@ You can access Nextcloud at https://yourdomain.com. Make sure to replace yourdom
 ### To stop all running services, use:
 
 ```bash
-docker-compose down
+docker-compose --profile <profile> down
 ```
 
 ## Configuration
@@ -105,11 +106,11 @@ Contributions are welcome! Please feel free to submit a pull request or open an 
 
 ## License
  
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the [MIT License](https://mit-license.org/)
 
 ## Acknowledgments
 
-Nextcloud
-Traefik
+Nextcloud\
+Traefik\
 Docker
 
