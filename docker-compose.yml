@@ -1,0 +1,108 @@
+version: '3.9'
+
+services:
+  traefik:
+    image: "traefik:v2.5"
+    container_name: "traefik"
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.web.address=:80"
+      - "--entryPoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    profiles:
+      - local
+
+  traefik-production:
+    image: "traefik:v2.5"
+    container_name: "traefik"
+    command:
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.web.address=:80"
+      - "--entryPoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    profiles:
+      - production
+
+  nextcloud-db:
+    image: mariadb
+    container_name: nextcloud-db
+    command: --transaction-isolation=READ-COMMITTED --log-bin=ROW
+    restart: always
+    volumes:
+      - ./db:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${NEXTCLOUD_DB}
+      - MYSQL_USER=${NEXTCLOUD_DB_USER}
+    profiles:
+      - local
+      - production
+
+  nextcloud-redis:
+    image: redis:alpine
+    container_name: nextcloud-redis
+    hostname: nextcloud-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    restart: always
+    profiles:
+      - local
+      - production
+
+  nextcloud-app:
+    image: nextcloud:19.0.8
+    container_name: nextcloud-app
+    restart: always
+    depends_on:
+      - nextcloud-db
+      - nextcloud-redis
+    environment:
+      - REDIS_HOST=nextcloud-redis
+      - REDIS_HOST_PASSWORD=${REDIS_PASSWORD}
+      - MYSQL_HOST=nextcloud-db
+      - MYSQL_DATABASE=${NEXTCLOUD_DB}
+      - MYSQL_USER=${NEXTCLOUD_DB_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - NEXTCLOUD_TRUSTED_DOMAINS=${NEXTCLOUD_HOST}
+    volumes: 
+      - ./app:/var/www/html
+      - ./config:/var/www/html/config
+      - ./data:/var/www/html/data 
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextcloud-http.rule=Host(`${NEXTCLOUD_HOST}`)"
+      - "traefik.http.routers.nextcloud-http.entrypoints=web"
+      - "traefik.http.routers.nextcloud-https.rule=Host(`${NEXTCLOUD_HOST}`)"
+      - "traefik.http.routers.nextcloud-https.entrypoints=websecure"
+      - "traefik.http.routers.nextcloud-https.tls.certresolver=myresolver"
+      - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
+    profiles:
+      - local
+      - production
+
+networks:
+  default:
+    name: nextcloud-network
